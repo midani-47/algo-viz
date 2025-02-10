@@ -11,18 +11,97 @@
     <div class="container">
         <h1>NP-Completeness Relationships</h1>
         <div class="controls">
-            <button id="resetView">Reset View</button>
-            <div class="legend">
-                <div class="legend-item">
-                    <span class="legend-color problem"></span> Problem
-                </div>
-                <div class="legend-item">
-                    <span class="legend-line"></span> Reduces to
+            <div class="control-group">
+                <label>Search Problems:</label>
+                <input type="text" id="searchInput" placeholder="Search by name or keyword...">
+            </div>
+            <div class="control-group">
+                <label>Select Problems:</label>
+                <div class="problem-selector" id="problemSelector"></div>
+            </div>
+            <div class="control-group">
+                <label>Layout:</label>
+                <select id="layoutSelect">
+                    <option value="force">Force-Directed</option>
+                    <option value="hierarchical">Hierarchical</option>
+                    <option value="circular">Circular</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>View Controls:</label>
+                <div class="button-group">
+                    <button id="resetView" title="Reset node positions">Reset View</button>
+                    <button id="zoomIn" title="Zoom in">Zoom In</button>
+                    <button id="zoomOut" title="Zoom out">Zoom Out</button>
+                    <button id="resetZoom" title="Reset zoom level">Reset Zoom</button>
                 </div>
             </div>
         </div>
-        <div id="visualization"></div>
+        <div class="visualization-container">
+            <div id="visualization"></div>
+            <div id="infoPanel" class="info-panel">
+                <div class="info-header">
+                    <h3>Problem Information</h3>
+                    <button class="close-btn" title="Close panel">&times;</button>
+                </div>
+                <div class="info-content"></div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <span class="legend-color problem"></span> Selected Problem
+            </div>
+            <div class="legend-item">
+                <span class="legend-color problem-related"></span> Related Problem
+            </div>
+            <div class="legend-item">
+                <span class="legend-line"></span> Reduces to
+            </div>
+        </div>
     </div>
+
+    <button id="interactiveToggle" class="interactive-toggle">Show Interactive Panel</button>
+
+    <div id="interactivePanel" class="interactive-panel" style="display: none;">
+        <div class="interactive-section">
+            <h3>Try a Reduction</h3>
+            <select id="problemSelect" class="graph-input">
+                <option value="">Select a Problem...</option>
+            </select>
+            <div id="problemInstance" class="example-container" style="display: none;">
+                <h4>Problem Instance</h4>
+                <div id="instanceInput"></div>
+                <button id="solveInstance">Solve</button>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Learn About Reductions</h3>
+            <select id="reductionSelect" class="graph-input">
+                <option value="">Select a Reduction...</option>
+            </select>
+            <div id="reductionSteps" class="example-container" style="display: none;">
+                <h4>Reduction Steps</h4>
+                <div id="stepContent"></div>
+                <div class="step-controls">
+                    <button id="prevStep">Previous</button>
+                    <button id="nextStep">Next</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Quick Tutorial</h3>
+            <div class="tutorial-steps">
+                <p>1. Click on nodes to see problem details</p>
+                <p>2. Click on edges to see reduction details</p>
+                <p>3. Use checkboxes to filter problems</p>
+                <p>4. Try different layouts using the dropdown</p>
+                <p>5. Drag nodes to rearrange the graph</p>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

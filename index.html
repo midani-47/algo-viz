@@ -37,14 +37,55 @@
                 </div>
             </div>
         </div>
-        <div class="visualization-container">
-            <div id="visualization"></div>
-            <div id="infoPanel" class="info-panel">
-                <div class="info-header">
-                    <h3>Problem Information</h3>
-                    <button class="close-btn" title="Close panel">&times;</button>
+        <div class="main-content">
+            <div class="visualization-container">
+                <div id="visualization"></div>
+                <div id="infoPanel" class="info-panel">
+                    <div class="info-header">
+                        <h3>Problem Information</h3>
+                        <button class="close-btn" title="Close panel">&times;</button>
+                    </div>
+                    <div class="info-content"></div>
                 </div>
-                <div class="info-content"></div>
+            </div>
+            <div class="interactive-panel">
+                <div class="interactive-section">
+                    <h3>Try a Reduction</h3>
+                    <select id="problemSelect" class="graph-input">
+                        <option value="">Select a Problem...</option>
+                    </select>
+                    <div id="problemInstance" class="example-container" style="display: none;">
+                        <h4>Problem Instance</h4>
+                        <div id="instanceInput"></div>
+                        <button id="solveInstance">Solve</button>
+                    </div>
+                </div>
+
+                <div class="interactive-section">
+                    <h3>Learn About Reductions</h3>
+                    <select id="reductionSelect" class="graph-input">
+                        <option value="">Select a Reduction...</option>
+                    </select>
+                    <div id="reductionSteps" class="example-container" style="display: none;">
+                        <h4>Reduction Steps</h4>
+                        <div id="stepContent"></div>
+                        <div class="step-controls">
+                            <button id="prevStep">Previous</button>
+                            <button id="nextStep">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="interactive-section">
+                    <h3>Quick Tutorial</h3>
+                    <div class="tutorial-steps">
+                        <p>1. Click on nodes to see problem details</p>
+                        <p>2. Click on edges to see reduction details</p>
+                        <p>3. Use checkboxes to filter problems</p>
+                        <p>4. Try different layouts using the dropdown</p>
+                        <p>5. Drag nodes to rearrange the graph</p>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="legend">
@@ -56,48 +97,6 @@
             </div>
             <div class="legend-item">
                 <span class="legend-line"></span> Reduces to
-            </div>
-        </div>
-    </div>
-
-    <button id="interactiveToggle" class="interactive-toggle">Show Interactive Panel</button>
-
-    <div id="interactivePanel" class="interactive-panel" style="display: none;">
-        <div class="interactive-section">
-            <h3>Try a Reduction</h3>
-            <select id="problemSelect" class="graph-input">
-                <option value="">Select a Problem...</option>
-            </select>
-            <div id="problemInstance" class="example-container" style="display: none;">
-                <h4>Problem Instance</h4>
-                <div id="instanceInput"></div>
-                <button id="solveInstance">Solve</button>
-            </div>
-        </div>
-
-        <div class="interactive-section">
-            <h3>Learn About Reductions</h3>
-            <select id="reductionSelect" class="graph-input">
-                <option value="">Select a Reduction...</option>
-            </select>
-            <div id="reductionSteps" class="example-container" style="display: none;">
-                <h4>Reduction Steps</h4>
-                <div id="stepContent"></div>
-                <div class="step-controls">
-                    <button id="prevStep">Previous</button>
-                    <button id="nextStep">Next</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="interactive-section">
-            <h3>Quick Tutorial</h3>
-            <div class="tutorial-steps">
-                <p>1. Click on nodes to see problem details</p>
-                <p>2. Click on edges to see reduction details</p>
-                <p>3. Use checkboxes to filter problems</p>
-                <p>4. Try different layouts using the dropdown</p>
-                <p>5. Drag nodes to rearrange the graph</p>
             </div>
         </div>
     </div>

@@ -162,6 +162,33 @@ function initVisualization() {
 // Initialize problem selector checkboxes
 function initProblemSelector() {
     const selector = document.getElementById('problemSelector');
+    
+    // Add Select All button
+    const selectAllLabel = document.createElement('label');
+    selectAllLabel.className = 'problem-checkbox select-all';
+    
+    const selectAllInput = document.createElement('input');
+    selectAllInput.type = 'checkbox';
+    selectAllInput.addEventListener('change', (e) => {
+        const checkboxes = selector.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (checkbox !== selectAllInput) {
+                checkbox.checked = e.target.checked;
+                if (e.target.checked) {
+                    selectedProblems.add(checkbox.value);
+                } else {
+                    selectedProblems.delete(checkbox.value);
+                }
+            }
+        });
+        updateVisualization();
+    });
+
+    selectAllLabel.appendChild(selectAllInput);
+    selectAllLabel.appendChild(document.createTextNode('Select All'));
+    selector.appendChild(selectAllLabel);
+    
+    // Add individual problem checkboxes
     npProblems.nodes.forEach(node => {
         const label = document.createElement('label');
         label.className = 'problem-checkbox';
@@ -174,6 +201,11 @@ function initProblemSelector() {
                 selectedProblems.add(node.id);
             } else {
                 selectedProblems.delete(node.id);
+                // Uncheck Select All if any individual checkbox is unchecked
+                const selectAllCheckbox = selector.querySelector('.select-all input');
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                }
             }
             updateVisualization();
         });
@@ -196,7 +228,13 @@ function initSearch() {
 // Filter problems based on search term
 function filterProblems(searchTerm) {
     const checkboxes = document.querySelectorAll('.problem-checkbox');
+    let allVisible = true;
+    
     checkboxes.forEach(checkbox => {
+        if (checkbox.classList.contains('select-all')) {
+            return; // Skip Select All button in filtering
+        }
+        
         const problemId = checkbox.querySelector('input').value;
         const problem = npProblems.nodes.find(n => n.id === problemId);
         const matches = 
@@ -206,7 +244,14 @@ function filterProblems(searchTerm) {
             problem.importance.toLowerCase().includes(searchTerm);
         
         checkbox.style.display = matches ? 'flex' : 'none';
+        if (!matches) allVisible = false;
     });
+    
+    // Show/hide Select All based on whether any problems are visible
+    const selectAll = document.querySelector('.select-all');
+    if (selectAll) {
+        selectAll.style.display = allVisible ? 'flex' : 'none';
+    }
 }
 
 // Utility function for debouncing
@@ -320,11 +365,18 @@ function applyForceLayout(nodes, links, width, height) {
 
     simulation = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-        .force("charge", d3.forceManyBody().strength(-500))
+        .force("charge", d3.forceManyBody().strength(-800))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collision", d3.forceCollide().radius(80));
+        .force("collision", d3.forceCollide().radius(60))
+        .force("x", d3.forceX(width / 2).strength(0.1))
+        .force("y", d3.forceY(height / 2).strength(0.1));
 
     simulation.on("tick", () => {
+        nodes.forEach(d => {
+            d.x = Math.max(40, Math.min(width - 40, d.x));
+            d.y = Math.max(40, Math.min(height - 40, d.y));
+        });
+
         container.selectAll(".link")
             .attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
@@ -533,15 +585,6 @@ function highlightReduction(reduction) {
 
 // Initialize interactive panel
 function initInteractivePanel() {
-    const toggle = document.getElementById('interactiveToggle');
-    const panel = document.getElementById('interactivePanel');
-    
-    toggle.addEventListener('click', () => {
-        const isHidden = panel.style.display === 'none';
-        panel.style.display = isHidden ? 'block' : 'none';
-        toggle.textContent = isHidden ? 'Hide Interactive Panel' : 'Show Interactive Panel';
-    });
-
     initProblemExamples();
     initReductionSteps();
 }
@@ -652,53 +695,157 @@ function createProblemInput(problem) {
     switch (problem.id) {
         case 'CLIQUE':
             return `
-                <div>
+                <div class="problem-input">
                     <p>Enter graph as adjacency matrix (0s and 1s):</p>
-                    <textarea class="graph-input" rows="5" placeholder="1 1 0\n1 1 1\n0 1 1"></textarea>
-                    <input type="number" class="graph-input" placeholder="Enter k (clique size)" min="1">
+                    <p class="input-help">Example: For a graph with 3 vertices:<br>0 1 1<br>1 0 1<br>1 1 0</p>
+                    <textarea class="graph-input" rows="5" placeholder="Enter adjacency matrix"></textarea>
+                    <p>Enter clique size (k):</p>
+                    <input type="number" class="graph-input" placeholder="Enter k" min="1">
+                    <div class="input-error"></div>
                 </div>
             `;
         case 'VERTEX-COVER':
             return `
-                <div>
+                <div class="problem-input">
                     <p>Enter graph as edge list (one edge per line):</p>
-                    <textarea class="graph-input" rows="5" placeholder="1 2\n2 3\n3 1"></textarea>
-                    <input type="number" class="graph-input" placeholder="Enter k (cover size)" min="1">
+                    <p class="input-help">Example:<br>0 1<br>1 2<br>2 0</p>
+                    <textarea class="graph-input" rows="5" placeholder="Enter edge list"></textarea>
+                    <p>Enter cover size (k):</p>
+                    <input type="number" class="graph-input" placeholder="Enter k" min="1">
+                    <div class="input-error"></div>
                 </div>
             `;
-        // Add more problem types as needed
         default:
             return `<p>Interactive input not yet implemented for ${problem.label}</p>`;
     }
 }
 
-// Helper function to solve problem instance
+// Helper function to validate input
+function validateInput(problem, inputs) {
+    const errorDiv = document.querySelector('.input-error');
+    errorDiv.textContent = '';
+    
+    try {
+        switch (problem.id) {
+            case 'CLIQUE': {
+                const matrixStr = inputs[0].value.trim();
+                if (!matrixStr) {
+                    throw new Error('Please enter an adjacency matrix');
+                }
+
+                // Split into rows and clean up each row
+                const matrix = matrixStr.split('\n')
+                    .map(row => row.trim())
+                    .filter(row => row.length > 0)
+                    .map(row => row.split(/\s+/).map(val => parseInt(val, 10)));
+
+                // Basic structure validation
+                if (!matrix.length) {
+                    throw new Error('Matrix cannot be empty');
+                }
+
+                const n = matrix.length;
+                if (matrix.some(row => row.length !== n)) {
+                    throw new Error('Matrix must be square (same number of rows and columns)');
+                }
+
+                // Validate values and symmetry
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        // Check for valid values (0 or 1)
+                        if (![0, 1].includes(matrix[i][j])) {
+                            throw new Error('Matrix must contain only 0s and 1s');
+                        }
+                        // Check for no self-loops
+                        if (i === j && matrix[i][j] !== 0) {
+                            throw new Error('Diagonal elements must be 0 (no self-loops)');
+                        }
+                        // Check for symmetry
+                        if (matrix[i][j] !== matrix[j][i]) {
+                            throw new Error('Matrix must be symmetric');
+                        }
+                    }
+                }
+
+                const k = parseInt(inputs[1].value);
+                if (isNaN(k) || k < 1 || k > n) {
+                    throw new Error(`Clique size k must be between 1 and ${n}`);
+                }
+                
+                return { matrix, k };
+            }
+            
+            case 'VERTEX-COVER': {
+                const edgeList = inputs[0].value.trim();
+                if (!edgeList) {
+                    throw new Error('Please enter at least one edge');
+                }
+                
+                const edges = edgeList.split('\n')
+                    .map(edge => {
+                        const [u, v] = edge.split(/\s+/).map(Number);
+                        if (isNaN(u) || isNaN(v)) {
+                            throw new Error('Each edge must contain two numbers');
+                        }
+                        if (u === v) {
+                            throw new Error('Self-loops are not allowed');
+                        }
+                        return [u, v];
+                    });
+                
+                const k = parseInt(inputs[1].value);
+                const vertices = new Set(edges.flat());
+                
+                if (isNaN(k) || k < 1 || k > vertices.size) {
+                    throw new Error(`Cover size k must be between 1 and ${vertices.size}`);
+                }
+                
+                return { edges, k };
+            }
+            
+            default:
+                throw new Error('Problem type not implemented');
+        }
+    } catch (error) {
+        errorDiv.textContent = error.message;
+        return null;
+    }
+}
+
+// Update solveProblemInstance to use validation
 function solveProblemInstance(problem) {
     const inputs = document.querySelectorAll('.graph-input');
-    let result = { problem: problem.label, result: '', steps: [] };
-
-    switch (problem.id) {
-        case 'CLIQUE':
-            const matrix = inputs[0].value.trim().split('\n')
-                .map(row => row.split(/\s+/).map(Number));
-            const k = parseInt(inputs[1].value);
-            
-            result = solveClique(matrix, k);
-            break;
-
-        case 'VERTEX-COVER':
-            const edges = inputs[0].value.trim().split('\n')
-                .map(edge => edge.split(/\s+/).map(Number));
-            const coverSize = parseInt(inputs[1].value);
-            
-            result = solveVertexCover(edges, coverSize);
-            break;
-
-        default:
-            result.result = 'Solver not implemented for this problem yet';
-            result.steps = ['This is a placeholder for future implementation'];
+    const validatedInput = validateInput(problem, inputs);
+    
+    if (!validatedInput) {
+        return {
+            problem: problem.label,
+            result: 'Invalid input',
+            steps: ['Please correct the input errors and try again']
+        };
     }
-
+    
+    let result = { problem: problem.label, result: '', steps: [] };
+    
+    try {
+        switch (problem.id) {
+            case 'CLIQUE':
+                result = solveClique(validatedInput.matrix, validatedInput.k);
+                break;
+                
+            case 'VERTEX-COVER':
+                result = solveVertexCover(validatedInput.edges, validatedInput.k);
+                break;
+                
+            default:
+                result.result = 'Solver not implemented for this problem yet';
+                result.steps = ['This is a placeholder for future implementation'];
+        }
+    } catch (error) {
+        result.result = 'Error solving problem';
+        result.steps = [`An error occurred: ${error.message}`];
+    }
+    
     return result;
 }
 
